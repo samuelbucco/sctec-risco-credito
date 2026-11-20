@@ -1,0 +1,26 @@
+# Arquivos locais do macOS
+.DS_Store
+
+# Ambiente virtual e arquivos temporários do Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Arquivos temporários dos notebooks
+.ipynb_checkpoints/
+
+# Configurações locais com credenciais
+.env
+.env.*
+!.env.example
+
+# Dados locais: preservar as pastas, sem publicar suas bases por padrão
+/data/raw/*
+!/data/raw/.gitkeep
+/data/processed/*
+!/data/processed/.gitkeep
+
+# Logs de execução
+*.log
