@@ -67,7 +67,7 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [ ] Salvar o pipeline e o ponto de corte escolhidos.
 - [ ] Implementar e verificar a API.
 - [ ] Completar a documentação e conferir a execução do projeto.
-- [ ] Publicar o repositório público no GitHub.
+- [x] Publicar o repositório público no GitHub.
 - [ ] Gravar o vídeo de até sete minutos e conferir o acesso ao link.
 - [ ] Entregar os links do repositório e do vídeo no AVA.
 
@@ -106,7 +106,9 @@ feat: adiciona analise exploratoria de credito
 fix: protege calculo de comprometimento contra divisao por zero
 ```
 
-O repositório público no GitHub e o envio inicial ainda estão pendentes. A conexão remota será registrada quando o repositório estiver criado.
+Repositório público: [samuelbucco/sctec-risco-credito](https://github.com/samuelbucco/sctec-risco-credito).
+
+A conexão remota `origin` aponta para `https://github.com/samuelbucco/sctec-risco-credito.git`. O envio inicial foi concluído e a branch local `main` acompanha `origin/main` no GitHub.
 
 ## Resultados e decisões a documentar
 
