@@ -2,7 +2,7 @@
 
 Projeto avaliativo do curso **Integração de IA com Dados**, da etapa **Aperfeiçoar do programa SCTec**.
 
-**Status:** planejamento inicial. A base ainda não foi analisada e nenhum modelo foi treinado.
+**Status:** estrutura e ambiente preparados; base original obtida e conferida. A análise exploratória e o treinamento ainda não foram realizados.
 
 ## Contexto e objetivo
 
@@ -14,13 +14,27 @@ A solução tem finalidade educacional. Os custos financeiros adotados na compar
 
 ## Dados e variável alvo
 
-- **Base:** CSV de risco de crédito indicado pelo professor na Opção A do roteiro.
+- **Base:** [CSV de risco de crédito indicado pelo professor](https://drive.google.com/file/d/1R4WCMc_56lv3fMaDalUBAz5jSxeZOcwI/view), referente à Opção A do roteiro.
 - **Variável alvo:** `loan_status`.
 - **Classe 0:** cliente que honra o empréstimo em dia.
 - **Classe 1:** cliente inadimplente.
 - **Roteiro:** [PDF do projeto](docs/SCTEC%20Aperfei%C3%A7oar.pdf).
 
-A origem, as dimensões, os tipos e o dicionário completo dos dados serão documentados após a inspeção da base. Os dados originais serão preservados.
+### Obtenção e conferência do arquivo original
+
+1. Acesse o link da base acima e faça o download de `credit_risk_dataset.csv`.
+2. Salve o arquivo em `data/raw/credit_risk_dataset.csv`, sem editar ou salvar novamente o conteúdo em uma planilha.
+3. Mantenha o original nessa pasta; arquivos derivados serão gravados separadamente em `data/processed/`.
+
+Conferência de aquisição realizada em **20/11/2026**:
+
+- Tamanho: **1.804.682 bytes**, igual ao informado pelo Google Drive.
+- Dimensões: **32.581 registros e 12 colunas**.
+- A coluna alvo `loan_status` está presente e todas as linhas possuem a quantidade esperada de campos.
+- O arquivo local preserva os bytes do download, sem limpeza, conversão ou outras transformações.
+- SHA-256: `ce3c6d2167717bf1627d1c0c81cbccd28323cd4aa7b96d542599366d5ff6aac8`.
+
+Os tipos e o dicionário completo dos dados serão documentados na próxima etapa. Esta conferência verifica o arquivo recebido; a avaliação da qualidade dos dados será feita na análise exploratória.
 
 ### Atributo obrigatório
 
@@ -58,7 +72,7 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [x] Criar a estrutura de pastas e o `.gitignore`.
 - [x] Preparar o ambiente Python e registrar as dependências.
 - [x] Iniciar o Git e adotar branches e commits por etapa.
-- [ ] Obter a base e preservar os dados originais.
+- [x] Obter a base e preservar os dados originais.
 - [ ] Inspecionar os dados, verificar duplicatas e separar treino e teste.
 - [ ] Fazer a análise exploratória e documentar os achados.
 - [ ] Implementar o tratamento dos dados e a nova variável.
