@@ -2,7 +2,7 @@
 
 Projeto avaliativo do curso **Integração de IA com Dados**, da etapa **Aperfeiçoar do programa SCTec**.
 
-**Status:** estrutura e ambiente preparados; base original obtida e conferida. A análise exploratória e o treinamento ainda não foram realizados.
+**Status:** estrutura e ambiente preparados; base original obtida e primeiro notebook de reconhecimento executado. A separação de treino e teste, a análise exploratória detalhada e o treinamento ainda estão pendentes.
 
 ## Contexto e objetivo
 
@@ -34,7 +34,9 @@ Conferência de aquisição realizada em **20/11/2026**:
 - O arquivo local preserva os bytes do download, sem limpeza, conversão ou outras transformações.
 - SHA-256: `ce3c6d2167717bf1627d1c0c81cbccd28323cd4aa7b96d542599366d5ff6aac8`.
 
-Os tipos e o dicionário completo dos dados serão documentados na próxima etapa. Esta conferência verifica o arquivo recebido; a avaliação da qualidade dos dados será feita na análise exploratória.
+O [primeiro notebook](notebooks/01_conhecimento_dados.ipynb) apresenta os tipos, um dicionário inicial das 12 colunas e as verificações de reconhecimento. As descrições inferidas dos nomes e valores estão identificadas como provisórias; moeda, critérios das notas e algumas unidades precisam de confirmação na origem.
+
+A inspeção inicial identificou 895 valores ausentes em `person_emp_length`, 3.116 em `loan_int_rate` e 165 linhas repetidas além da primeira ocorrência. Não foi aplicado tratamento ao CSV. A decisão sobre imputação e valores discrepantes será fundamentada na análise do conjunto de treino.
 
 ### Atributo obrigatório
 
@@ -73,7 +75,8 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [x] Preparar o ambiente Python e registrar as dependências.
 - [x] Iniciar o Git e adotar branches e commits por etapa.
 - [x] Obter a base e preservar os dados originais.
-- [ ] Inspecionar os dados, verificar duplicatas e separar treino e teste.
+- [x] Criar e executar o notebook de reconhecimento, com tipos, dicionário inicial, nulos e verificação de duplicatas.
+- [ ] Tratar as repetições exatas com justificativa e separar treino e teste.
 - [ ] Fazer a análise exploratória e documentar os achados.
 - [ ] Implementar o tratamento dos dados e a nova variável.
 - [ ] Construir os pipelines e comparar os modelos.
@@ -170,6 +173,14 @@ O caminho exibido deve terminar em `.venv/bin/python`. Para sair do ambiente, ex
 1. Com a extensão Python da Microsoft instalada, abra a paleta de comandos com `Cmd+Shift+P` no macOS.
 2. Execute `Python: Select Interpreter` e selecione o Python da pasta `.venv`. Se ele não aparecer, informe o caminho `.venv/bin/python` pela opção de inserir o caminho do interpretador.
 3. Para trabalhar com arquivos `.ipynb`, use a extensão Jupyter da Microsoft e selecione esse mesmo ambiente no seletor de kernel do notebook.
+
+### Primeiro notebook
+
+Abra `notebooks/01_conhecimento_dados.ipynb` no VS Code, selecione o kernel da `.venv` e execute as células em ordem, de cima para baixo. O notebook já contém os resultados da execução inicial e pode ser reexecutado com o CSV no caminho indicado acima.
+
+Ele utiliza `pandas` para ler os dados e conferir a estrutura, apresenta um dicionário inicial e registra os pontos de qualidade a investigar. Ao final, verifica o SHA-256 para confirmar a preservação do original.
+
+A análise detalhada, incluindo estatísticas descritivas e gráficos, será realizada após a separação de treino e teste. O primeiro notebook não conclui a fase de EDA exigida no roteiro.
 
 ### Bibliotecas do projeto
 
