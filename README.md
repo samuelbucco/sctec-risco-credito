@@ -2,7 +2,7 @@
 
 Projeto avaliativo do curso **Integração de IA com Dados**, da etapa **Aperfeiçoar do programa SCTec**.
 
-**Status:** estrutura e ambiente preparados; base original obtida e primeiro notebook de reconhecimento executado. A separação de treino e teste, a análise exploratória detalhada e o treinamento ainda estão pendentes.
+**Status:** base reconhecida, repetições exatas tratadas na cópia de trabalho e conjuntos de treino e teste separados. A análise exploratória detalhada e o treinamento ainda estão pendentes.
 
 ## Contexto e objetivo
 
@@ -37,6 +37,23 @@ Conferência de aquisição realizada em **20/11/2026**:
 O [primeiro notebook](notebooks/01_conhecimento_dados.ipynb) apresenta os tipos, um dicionário inicial das 12 colunas e as verificações de reconhecimento. As descrições inferidas dos nomes e valores estão identificadas como provisórias; moeda, critérios das notas e algumas unidades precisam de confirmação na origem.
 
 A inspeção inicial identificou 895 valores ausentes em `person_emp_length`, 3.116 em `loan_int_rate` e 165 linhas repetidas além da primeira ocorrência. Não foi aplicado tratamento ao CSV. A decisão sobre imputação e valores discrepantes será fundamentada na análise do conjunto de treino.
+
+### Repetições e separação de treino e teste
+
+O [segundo notebook](notebooks/02_separacao_treino_teste.ipynb) remove as 165 repetições exatas na cópia em memória, mantendo a primeira ocorrência, e divide os 32.416 registros restantes com `test_size=0.20`, `stratify=y` e `random_state=42`.
+
+Como não há identificador de contrato, tratar linhas idênticas em todas as colunas como repetições é uma hipótese de trabalho. A regra atende ao roteiro e evita cópias em treino e teste, mas pode excluir empréstimos distintos com os mesmos valores nas colunas disponíveis. Não são removidos registros por coincidências parciais, como ter a mesma idade ou renda.
+
+| Conjunto | Registros | Arquivo local |
+| --- | ---: | --- |
+| Treino | 25.932 | `data/processed/treino.csv` |
+| Teste | 6.484 | `data/processed/teste.csv` |
+
+Cada CSV contém os 11 atributos originais e o alvo `loan_status`, sem coluna adicional de índice. Ao preparar os modelos, o alvo deve ser separado dos atributos. `data/processed/separacao.json` registra a semente, a regra de repetição, as versões e os hashes para reprodução.
+
+Foram conferidos o alinhamento dos atributos com o alvo, a cobertura dos registros, a ausência de entradas idênticas entre os conjuntos, a leitura dos arquivos exportados e a preservação do original. Nulos e valores discrepantes permanecem nos conjuntos. Nenhum imputador, escalonador, codificador ou técnica de balanceamento foi ajustado nesta etapa.
+
+A próxima análise utilizará apenas `treino.csv`. O teste ficará reservado para a avaliação final; a escolha dos hiperparâmetros e do ponto de corte utilizará validação dentro do treino.
 
 ### Atributo obrigatório
 
@@ -76,7 +93,7 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [x] Iniciar o Git e adotar branches e commits por etapa.
 - [x] Obter a base e preservar os dados originais.
 - [x] Criar e executar o notebook de reconhecimento, com tipos, dicionário inicial, nulos e verificação de duplicatas.
-- [ ] Tratar as repetições exatas com justificativa e separar treino e teste.
+- [x] Tratar as repetições exatas com justificativa e separar treino e teste.
 - [ ] Fazer a análise exploratória e documentar os achados.
 - [ ] Implementar o tratamento dos dados e a nova variável.
 - [ ] Construir os pipelines e comparar os modelos.
@@ -181,6 +198,12 @@ Abra `notebooks/01_conhecimento_dados.ipynb` no VS Code, selecione o kernel da `
 Ele utiliza `pandas` para ler os dados e conferir a estrutura, apresenta um dicionário inicial e registra os pontos de qualidade a investigar. Ao final, verifica o SHA-256 para confirmar a preservação do original.
 
 A análise detalhada, incluindo estatísticas descritivas e gráficos, será realizada após a separação de treino e teste. O primeiro notebook não conclui a fase de EDA exigida no roteiro.
+
+### Segundo notebook
+
+Execute `notebooks/02_separacao_treino_teste.ipynb` com o kernel da `.venv`, de cima para baixo. Ele lê o CSV original, trata repetições exatas, realiza a divisão estratificada e gera `treino.csv`, `teste.csv` e `separacao.json` em `data/processed/`.
+
+O notebook é independente do primeiro e pode ser reexecutado para recriar os conjuntos. A estratificação mantém aproximadamente as proporções das classes; a semente fixa permite reproduzir a divisão com a mesma base, ordem e ambiente. Os arquivos de dados continuam locais e excluídos do Git.
 
 ### Bibliotecas do projeto
 
