@@ -2,7 +2,7 @@
 
 Projeto avaliativo do curso **Integração de IA com Dados**, da etapa **Aperfeiçoar do programa SCTec**.
 
-**Status:** base reconhecida, repetições exatas tratadas na cópia de trabalho e conjuntos de treino e teste separados. A análise exploratória detalhada e o treinamento ainda estão pendentes.
+**Status:** base reconhecida, repetições exatas tratadas, treino e teste separados e análise exploratória do treino concluída. O tratamento das variáveis, a engenharia de atributos e o treinamento são as próximas etapas.
 
 ## Contexto e objetivo
 
@@ -53,7 +53,30 @@ Cada CSV contém os 11 atributos originais e o alvo `loan_status`, sem coluna ad
 
 Foram conferidos o alinhamento dos atributos com o alvo, a cobertura dos registros, a ausência de entradas idênticas entre os conjuntos, a leitura dos arquivos exportados e a preservação do original. Nulos e valores discrepantes permanecem nos conjuntos. Nenhum imputador, escalonador, codificador ou técnica de balanceamento foi ajustado nesta etapa.
 
-A próxima análise utilizará apenas `treino.csv`. O teste ficará reservado para a avaliação final; a escolha dos hiperparâmetros e do ponto de corte utilizará validação dentro do treino.
+A análise exploratória utiliza apenas `treino.csv`. O teste fica reservado para a avaliação final; a escolha dos hiperparâmetros e do ponto de corte utilizará validação dentro do treino.
+
+### Principais descobertas da análise exploratória
+
+O [terceiro notebook](notebooks/03_analise_exploratoria.ipynb) apresenta dimensões, tipos, estatísticas descritivas, quatro figuras e um diagnóstico que orienta o tratamento. Todos os resultados abaixo se referem exclusivamente aos **25.932 registros de treino**.
+
+| Achado | Evidência e implicação |
+| --- | --- |
+| Classes desbalanceadas | 20.261 adimplentes (78,13%) e 5.671 inadimplentes (21,87%). Acurácia isolada é insuficiente; avaliar recall, F1, ROC-AUC e custos dos erros. |
+| Tempo de emprego ausente | 727 nulos (2,80%), média 4,77, mediana 4 e assimetria 2,94. A mediana é candidata à imputação após o tratamento de inconsistências. |
+| Taxa de juros ausente | 2.488 nulos (9,59%), média 11,02, mediana 10,99 e assimetria 0,20. A média é candidata à imputação pela distribuição mais simétrica. |
+| Renda com cauda longa | Mediana 55.000, média 65.828,51 e máximo 6.000.000, em moeda não informada. Extremos financeiros não serão excluídos apenas por serem raros. |
+| Plausibilidade a investigar | Cinco idades acima de 100 anos e dois registros com tempo de emprego maior que a idade. As regras de tratamento precisam ser explícitas. |
+| Associações com inadimplência | Correlação de Pearson de 0,380 com `loan_percent_income` e 0,334 com `loan_int_rate`; associação não demonstra causalidade. |
+| Nova variável não é mera renomeação | A razão empréstimo/renda calculada difere da coluna existente em mais de 0,5 ponto percentual em 339 registros, com diferença máxima de 9,34 pontos. |
+
+A regra IQR identifica valores incomuns sem provar erro: por exemplo, seu limite superior para idade é 40,5 anos, o que não justifica remover todos os clientes acima dessa idade. A EDA não modifica os dados. A imputação e qualquer transformação estatística serão ajustadas dentro dos pipelines e das partições de treino da validação.
+
+Figuras exportadas pelo notebook:
+
+- [Distribuição do alvo](docs/figuras/01_distribuicao_alvo.png).
+- [Distribuições numéricas](docs/figuras/02_distribuicoes_numericas.png).
+- [Boxplots com valores extremos](docs/figuras/03_boxplots.png).
+- [Matriz de correlação](docs/figuras/04_correlacao.png).
 
 ### Atributo obrigatório
 
@@ -94,7 +117,7 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [x] Obter a base e preservar os dados originais.
 - [x] Criar e executar o notebook de reconhecimento, com tipos, dicionário inicial, nulos e verificação de duplicatas.
 - [x] Tratar as repetições exatas com justificativa e separar treino e teste.
-- [ ] Fazer a análise exploratória e documentar os achados.
+- [x] Fazer a análise exploratória e documentar os achados.
 - [ ] Implementar o tratamento dos dados e a nova variável.
 - [ ] Construir os pipelines e comparar os modelos.
 - [ ] Avaliar overfitting, custos dos erros e pontos de corte.
@@ -204,6 +227,12 @@ A análise detalhada, incluindo estatísticas descritivas e gráficos, será rea
 Execute `notebooks/02_separacao_treino_teste.ipynb` com o kernel da `.venv`, de cima para baixo. Ele lê o CSV original, trata repetições exatas, realiza a divisão estratificada e gera `treino.csv`, `teste.csv` e `separacao.json` em `data/processed/`.
 
 O notebook é independente do primeiro e pode ser reexecutado para recriar os conjuntos. A estratificação mantém aproximadamente as proporções das classes; a semente fixa permite reproduzir a divisão com a mesma base, ordem e ambiente. Os arquivos de dados continuam locais e excluídos do Git.
+
+### Terceiro notebook
+
+Execute `notebooks/03_analise_exploratoria.ipynb` com o kernel da `.venv`. É necessário ter executado o notebook 02 para gerar `treino.csv` e `separacao.json`. O notebook confere o hash do treino, executa a EDA e exporta quatro gráficos para `docs/figuras/`; os resultados também ficam incorporados ao notebook.
+
+O CSV de teste não é lido nessa análise. Os CSVs de entrada são preservados e nenhuma limpeza ou imputação é aplicada durante a EDA.
 
 ### Bibliotecas do projeto
 
