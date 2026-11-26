@@ -2,7 +2,7 @@
 
 Projeto avaliativo do curso **Integração de IA com Dados**, da etapa **Aperfeiçoar do programa SCTec**.
 
-**Status:** análise exploratória, regras de tratamento, engenharia de atributos e pré-processamento implementados e verificados. A comparação dos modelos, a avaliação financeira e a API são as próximas etapas.
+**Status:** análise, tratamento, engenharia de atributos e comparação de modelos concluídos. Dois finalistas foram definidos por validação cruzada. A avaliação financeira, a escolha do ponto de corte, a serialização do campeão e a API são as próximas etapas.
 
 ## Contexto e objetivo
 
@@ -118,6 +118,36 @@ A mediana é motivada pela assimetria do tempo de emprego e pela robustez aos ex
 
 Na demonstração, o ajuste usa 20.745 registros e a validação interna, 5.187, ambos derivados do treino. As duas matrizes têm 26 colunas, sem valores ausentes ou infinitos. O teste final não é utilizado. Durante a comparação dos modelos, o pré-processador deverá ser incluído junto do classificador em um único pipeline para que cada partição de validação aprenda suas próprias estatísticas. Não se deve fornecer à validação cruzada uma tabela imputada globalmente.
 
+### Comparação de modelos e overfitting
+
+O [quinto notebook](notebooks/05_modelagem_validacao.ipynb) executa as funções de [src/modeling.py](src/modeling.py), comparando duas famílias com quatro configurações cada:
+
+- Regressão Logística: `C` em 0,01; 0,1; 1; 10, com padronização numérica.
+- Random Forest: `max_depth` em 3; 6; 10; sem limite, com 100 árvores e sem padronização.
+
+Ambas utilizam `class_weight="balanced"` apenas no ajuste. A validação estratificada tem três folds, semente 42 e as mesmas partições para todas as configurações. O pipeline completo, incluindo imputação e encoding, é ajustado dentro de cada fold. O critério predefinido é maior ROC-AUC média de validação por família, com F1 como desempate e, depois, menor complexidade.
+
+Os finalistas são congelados antes de carregar o teste. A tabela de treino e teste para as oito configurações atende ao roteiro e não reabre a busca. Na próxima etapa, custos e ponto de corte serão escolhidos por validação no treino, sem adaptar o protocolo aos resultados do teste.
+
+| Finalista por família | ROC-AUC CV (média ± desvio) | ROC-AUC teste | F1 teste | Recall teste |
+| --- | ---: | ---: | ---: | ---: |
+| Regressão Logística, `C=10` | 0,8729 ± 0,0053 | 0,8720 | 0,6480 | 0,7743 |
+| Random Forest, `max_depth=None` | 0,9284 ± 0,0008 | 0,9299 | 0,8198 | 0,7525 |
+
+F1 e recall usam a classe positiva inadimplente e ponto de corte 0,5. O desvio é calculado entre folds e não representa um intervalo de confiança. A vantagem de `C=10` sobre `C=1` é de aproximadamente 0,00003 na ROC-AUC média, sem demonstrar superioridade estatística.
+
+**Diagnóstico:** a Regressão Logística apresenta diferenças pequenas entre ajuste e validação (até aproximadamente 0,0013). Na Random Forest, o gap de ROC-AUC CV passa de 0,0012 na profundidade 3 para 0,0295 na 10 e 0,0716 sem limite. A floresta sem limite atinge ROC-AUC 1,0000 no ajuste, evidenciando memorização; sua média de validação, porém, é a maior entre as configurações comparadas. A profundidade 10 reduz o sobreajuste com ROC-AUC CV 0,9269. O protocolo mantém a configuração sem limite como candidata pelo critério fixado, com essa limitação documentada.
+
+O gap de treino e teste dos finalistas é 0,0020 na logística e 0,0701 na floresta. A floresta apresenta melhor ranking e F1, mas menor recall no corte inicial. A escolha para produção depende dos custos dos erros e do ponto de corte, que ainda serão avaliados.
+
+Resultados reproduzíveis:
+
+- [Comparação de ajuste e validação cruzada](docs/resultados/comparacao_validacao.csv).
+- [Comparação de treino e teste](docs/resultados/comparacao_treino_teste.csv).
+- [Finalistas e protocolo registrados](docs/resultados/selecao_modelos.json).
+- [Gráfico de validação](docs/figuras/05_validacao_modelos.png).
+- [Gráfico de treino e teste](docs/figuras/06_overfitting_modelos.png).
+
 ## Escopo e requisitos
 
 1. **Análise exploratória:** apresentar dimensões, tipos, estatísticas descritivas, pelo menos três gráficos explicativos e interpretação dos resultados.
@@ -147,7 +177,7 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [x] Tratar as repetições exatas com justificativa e separar treino e teste.
 - [x] Fazer a análise exploratória e documentar os achados.
 - [x] Implementar o tratamento dos dados e a nova variável.
-- [ ] Construir os pipelines e comparar os modelos.
+- [x] Construir os pipelines e comparar os modelos.
 - [ ] Avaliar overfitting, custos dos erros e pontos de corte.
 - [ ] Salvar o pipeline e o ponto de corte escolhidos.
 - [ ] Implementar e verificar a API.
@@ -182,7 +212,7 @@ O `.gitignore` exclui do versionamento o ambiente virtual, caches do Python, che
 
 ## Controle de versão
 
-O projeto utiliza Git para registrar sua evolução. A branch `main` guarda a versão consolidada; cada etapa será desenvolvida em uma branch própria, começando por `feat/eda-limpeza`.
+O projeto utiliza Git para registrar sua evolução. A branch `main` guarda a versão consolidada; `feat/eda-limpeza` reúne análise e preparação dos dados, e `feat/pipeline-modelagem` dá continuidade com a comparação dos modelos.
 
 Os commits devem descrever mudanças concretas, por exemplo:
 
@@ -274,6 +304,14 @@ python -m unittest discover -s tests -v
 ```
 
 Os sete testes verificam razões e divisores inválidos, tratamento das inconsistências, preservação das entradas, bloqueio do alvo nas entradas, imputação antes da nova variável, categorias desconhecidas, isolamento das estatísticas, opção sem escala e serialização com `joblib`.
+
+### Quinto notebook e testes de modelagem
+
+Execute `notebooks/05_modelagem_validacao.ipynb` com o kernel da `.venv`, após gerar os conjuntos no notebook 02. A execução faz 24 ajustes na validação cruzada e oito ajustes no treino completo para produzir a comparação exigida no roteiro. Os resultados agregados ficam em `docs/resultados/` e dois gráficos são exportados para `docs/figuras/`.
+
+O teste é carregado após a gravação dos finalistas. As regras de seleção estão no código e o hash do arquivo de seleção é conferido após a avaliação de teste, garantindo que essa seleção não foi alterada durante a execução.
+
+A suíte agora contém **11 testes**: sete de pré-processamento e quatro de modelagem. Os novos testes verificam as oito configurações e seus pesos de classe, a seleção baseada apenas em validação, as métricas com limiar explícito e a integração das duas famílias com entradas brutas e valores ausentes.
 
 ### Bibliotecas do projeto
 
