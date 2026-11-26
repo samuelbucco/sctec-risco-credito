@@ -2,7 +2,7 @@
 
 Projeto avaliativo do curso **Integração de IA com Dados**, da etapa **Aperfeiçoar do programa SCTec**.
 
-**Status:** base reconhecida, repetições exatas tratadas, treino e teste separados e análise exploratória do treino concluída. O tratamento das variáveis, a engenharia de atributos e o treinamento são as próximas etapas.
+**Status:** análise exploratória, regras de tratamento, engenharia de atributos e pré-processamento implementados e verificados. A comparação dos modelos, a avaliação financeira e a API são as próximas etapas.
 
 ## Contexto e objetivo
 
@@ -88,7 +88,35 @@ comprometimento_renda = (loan_amnt / person_income) × 100
 
 Esse indicador representa a razão percentual entre o valor total do empréstimo e a renda anual, e não o comprometimento mensal com parcelas.
 
-O cálculo será implementado em uma função reutilizável em `src/features.py`, com tratamento de valores ausentes e proteção contra divisão por zero. A mesma regra será aplicada no treinamento e na API.
+O cálculo está implementado em `adicionar_comprometimento_renda()`, no arquivo [src/features.py](src/features.py). A função preserva a entrada e produz `NaN` para componentes ausentes, não finitos ou não positivos, sem divisão por zero. No pipeline, os componentes são imputados antes do cálculo. A API utilizará o pipeline completo salvo, com a mesma função.
+
+| Coluna derivada | Tipo | Significado e unidade |
+| --- | --- | --- |
+| `comprometimento_renda` | Numérico contínuo | Valor total do empréstimo dividido pela renda anual, multiplicado por 100; resultado em porcentagem |
+
+### Tratamento e pré-processamento reutilizáveis
+
+O [quarto notebook](notebooks/04_tratamento_features.ipynb) demonstra as funções de [src/preprocessing.py](src/preprocessing.py) e a nova variável. As regras não removem registros nem alteram o CSV original:
+
+- Idades fora de 18 a 100 anos viram ausentes. Esse intervalo é uma convenção educacional para o projeto, não um limite universal.
+- Renda, valor emprestado e taxa de juros não positivos viram ausentes, conforme a hipótese de produto adotada. Campos numéricos não interpretáveis ou infinitos também viram ausentes.
+- Tempo de emprego e histórico de crédito negativos ou superiores à idade original viram ausentes; zero continua permitido.
+- Espaços nas extremidades das categorias são removidos; textos vazios viram ausentes.
+- Extremos financeiros positivos são mantidos. O IQR serve como evidência de raridade, sem justificar corte automático.
+- `loan_percent_income` é desconsiderada em favor da nova razão calculada, evitando duas versões quase redundantes e divergentes do indicador.
+
+No treino, as regras adicionam cinco ausências em idade e duas em tempo de emprego. Os valores imputados são aproximações estatísticas, não correções comprovadas dos valores originais.
+
+`criar_preprocessador(escalonar=True)` constrói um pipeline ainda não ajustado, com esta ordem:
+
+1. Regras fixas de qualidade.
+2. Imputação pela mediana dos campos numéricos, exceto taxa de juros, que usa média; categorias usam moda quando necessário.
+3. Cálculo de `comprometimento_renda` a partir dos componentes já imputados.
+4. `OneHotEncoder(handle_unknown="ignore")` nas categorias e `StandardScaler` nos numéricos.
+
+A mediana é motivada pela assimetria do tempo de emprego e pela robustez aos extremos; a média da taxa é motivada pela distribuição mais simétrica observada na EDA. A opção `escalonar=False` preserva os valores numéricos para modelos baseados em árvores.
+
+Na demonstração, o ajuste usa 20.745 registros e a validação interna, 5.187, ambos derivados do treino. As duas matrizes têm 26 colunas, sem valores ausentes ou infinitos. O teste final não é utilizado. Durante a comparação dos modelos, o pré-processador deverá ser incluído junto do classificador em um único pipeline para que cada partição de validação aprenda suas próprias estatísticas. Não se deve fornecer à validação cruzada uma tabela imputada globalmente.
 
 ## Escopo e requisitos
 
@@ -118,7 +146,7 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [x] Criar e executar o notebook de reconhecimento, com tipos, dicionário inicial, nulos e verificação de duplicatas.
 - [x] Tratar as repetições exatas com justificativa e separar treino e teste.
 - [x] Fazer a análise exploratória e documentar os achados.
-- [ ] Implementar o tratamento dos dados e a nova variável.
+- [x] Implementar o tratamento dos dados e a nova variável.
 - [ ] Construir os pipelines e comparar os modelos.
 - [ ] Avaliar overfitting, custos dos erros e pontos de corte.
 - [ ] Salvar o pipeline e o ponto de corte escolhidos.
@@ -140,6 +168,7 @@ Projeto/
 │   └── processed/     # Dados derivados do processamento
 ├── notebooks/         # Análise exploratória e experimentos
 ├── src/               # Funções reutilizáveis
+├── tests/             # Verificações de regras e pré-processamento
 ├── models/            # Pipeline e ponto de corte salvos
 ├── app/               # API FastAPI e contratos Pydantic
 ├── README.md          # Apresentação e guia do projeto
@@ -233,6 +262,18 @@ O notebook é independente do primeiro e pode ser reexecutado para recriar os co
 Execute `notebooks/03_analise_exploratoria.ipynb` com o kernel da `.venv`. É necessário ter executado o notebook 02 para gerar `treino.csv` e `separacao.json`. O notebook confere o hash do treino, executa a EDA e exporta quatro gráficos para `docs/figuras/`; os resultados também ficam incorporados ao notebook.
 
 O CSV de teste não é lido nessa análise. Os CSVs de entrada são preservados e nenhuma limpeza ou imputação é aplicada durante a EDA.
+
+### Quarto notebook e testes
+
+Execute `notebooks/04_tratamento_features.ipynb` com o kernel da `.venv`. Ele importa os módulos de `src/`, apresenta os efeitos das regras e demonstra imputação, engenharia de atributos, codificação e escala com validação interna. As transformações ficam em memória; os arquivos de entrada são preservados.
+
+Para verificar as regras de negócio e o isolamento do ajuste, execute na raiz do projeto:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Os sete testes verificam razões e divisores inválidos, tratamento das inconsistências, preservação das entradas, bloqueio do alvo nas entradas, imputação antes da nova variável, categorias desconhecidas, isolamento das estatísticas, opção sem escala e serialização com `joblib`.
 
 ### Bibliotecas do projeto
 
