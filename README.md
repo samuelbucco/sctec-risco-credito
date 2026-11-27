@@ -2,7 +2,7 @@
 
 Projeto avaliativo do curso **Integração de IA com Dados**, da etapa **Aperfeiçoar do programa SCTec**.
 
-**Status:** análise, tratamento, engenharia de atributos e comparação de modelos concluídos. Dois finalistas foram definidos por validação cruzada. A avaliação financeira, a escolha do ponto de corte, a serialização do campeão e a API são as próximas etapas.
+**Status:** modelo e ponto de corte escolhidos por custo simulado com validação no treino; avaliação no teste concluída e pipeline campeão salvo. A API e a preparação da entrega são as próximas etapas.
 
 ## Contexto e objetivo
 
@@ -127,7 +127,7 @@ O [quinto notebook](notebooks/05_modelagem_validacao.ipynb) executa as funções
 
 Ambas utilizam `class_weight="balanced"` apenas no ajuste. A validação estratificada tem três folds, semente 42 e as mesmas partições para todas as configurações. O pipeline completo, incluindo imputação e encoding, é ajustado dentro de cada fold. O critério predefinido é maior ROC-AUC média de validação por família, com F1 como desempate e, depois, menor complexidade.
 
-Os finalistas são congelados antes de carregar o teste. A tabela de treino e teste para as oito configurações atende ao roteiro e não reabre a busca. Na próxima etapa, custos e ponto de corte serão escolhidos por validação no treino, sem adaptar o protocolo aos resultados do teste.
+Os finalistas são congelados antes de carregar o teste. A tabela de treino e teste para as oito configurações atende ao roteiro e não reabre a busca. Custos e ponto de corte são escolhidos por validação no treino, como descrito na seção financeira, sem adaptar o protocolo aos resultados do teste.
 
 | Finalista por família | ROC-AUC CV (média ± desvio) | ROC-AUC teste | F1 teste | Recall teste |
 | --- | ---: | ---: | ---: | ---: |
@@ -138,7 +138,7 @@ F1 e recall usam a classe positiva inadimplente e ponto de corte 0,5. O desvio �
 
 **Diagnóstico:** a Regressão Logística apresenta diferenças pequenas entre ajuste e validação (até aproximadamente 0,0013). Na Random Forest, o gap de ROC-AUC CV passa de 0,0012 na profundidade 3 para 0,0295 na 10 e 0,0716 sem limite. A floresta sem limite atinge ROC-AUC 1,0000 no ajuste, evidenciando memorização; sua média de validação, porém, é a maior entre as configurações comparadas. A profundidade 10 reduz o sobreajuste com ROC-AUC CV 0,9269. O protocolo mantém a configuração sem limite como candidata pelo critério fixado, com essa limitação documentada.
 
-O gap de treino e teste dos finalistas é 0,0020 na logística e 0,0701 na floresta. A floresta apresenta melhor ranking e F1, mas menor recall no corte inicial. A escolha para produção depende dos custos dos erros e do ponto de corte, que ainda serão avaliados.
+O gap de treino e teste dos finalistas é 0,0020 na logística e 0,0701 na floresta. A floresta apresenta melhor ranking e F1, mas menor recall no corte inicial. A avaliação financeira a seguir fundamenta a escolha do modelo e do ponto de corte.
 
 Resultados reproduzíveis:
 
@@ -147,6 +147,46 @@ Resultados reproduzíveis:
 - [Finalistas e protocolo registrados](docs/resultados/selecao_modelos.json).
 - [Gráfico de validação](docs/figuras/05_validacao_modelos.png).
 - [Gráfico de treino e teste](docs/figuras/06_overfitting_modelos.png).
+
+### Avaliação financeira, veredito e artefato
+
+O [sexto notebook](notebooks/06_avaliacao_financeira.ipynb) usa as funções de [src/evaluation.py](src/evaluation.py) para gerar previsões fora da partição de ajuste (OOF), comparar 201 cortes entre 0 e 1 e escolher a política antes de avaliar o teste.
+
+**Hipótese didática:** falso positivo (sinalizar como inadimplente quem pagaria) custa **1 UM**; falso negativo (sinalizar como seguro quem ficaria inadimplente) custa **5 UM**. UM é unidade monetária fictícia, sem equivalência atribuída à moeda dos empréstimos. O custo é `FP × custo_fp + FN × custo_fn`, com custo zero nos acertos. Não representa lucro completo, recuperação de crédito ou custo individual dos contratos.
+
+O corte minimiza o custo OOF, com desempate por menos FN e menor corte. O candidato minimiza o custo OOF, depois FN e, em empate completo, prefere a logística por simplicidade. Os custos de desenvolvimento são usados na escolha e não constituem uma estimativa imparcial de desempenho após essa seleção.
+
+| Candidato | Corte escolhido por OOF | Custo OOF (UM fictícias) | Custo teste no corte escolhido (UM fictícias) |
+| --- | ---: | ---: | ---: |
+| Random Forest sem limite de profundidade | **0,295** | **7.253** | **1.840** |
+| Regressão Logística `C=10` | 0,490 | 9.859 | 2.480 |
+
+**Veredito:** a Random Forest com corte **0,295** é o modelo escolhido para a API educacional, pelo menor custo OOF no cenário definido. A decisão foi registrada antes da leitura do teste nesta etapa, preservando os hiperparâmetros da fase anterior.
+
+No teste, alterar o corte da floresta de 0,5 para 0,295 produz esta troca:
+
+| Indicador | Corte 0,5 | Corte 0,295 |
+| --- | ---: | ---: |
+| Falsos positivos | 118 | 590 |
+| Falsos negativos | 351 | 250 |
+| Recall dos inadimplentes | 75,25% | 82,37% |
+| Precisão dos alertas | 90,04% | 66,44% |
+| F1 | 0,8198 | 0,7355 |
+| Custo simulado (UM fictícias) | 1.873 | 1.840 |
+
+O custo cai **33 UM (1,76%)** nessa divisão: 101 FN evitados correspondem a 505 UM, contra 472 UM por FP adicionais. É um ganho pequeno, sem demonstração de significância estatística ou lucro real. Na logística, o custo sobe de 2.473 para 2.480 UM no teste apesar da ligeira melhora OOF; mantemos o corte fixado no desenvolvimento.
+
+A análise de sensibilidade usa relações FN:FP de 1:1, 2:1, 5:1, 10:1 e 20:1. A floresta tem menor custo OOF nos cinco cenários, mas seu corte vai de 0,675 a 0,105. O corte 0,295 depende das hipóteses escolhidas. Os scores não foram calibrados probabilisticamente; esse corte não comprova risco real de 29,5%. O sinal de overfitting da floresta permanece como limitação.
+
+Arquivos gerados:
+
+- [Curvas de custo OOF](docs/resultados/custos_threshold_oof.csv) e [sensibilidade às hipóteses](docs/resultados/sensibilidade_custos.csv).
+- [Decisão congelada antes do teste](docs/resultados/decisao_financeira.json).
+- [Resultados financeiros no teste](docs/resultados/avaliacao_financeira_teste.csv) e [relatórios completos de classificação](docs/resultados/relatorios_classificacao.json).
+- [Gráfico de custo por corte](docs/figuras/07_custos_threshold.png) e [quatro matrizes de confusão](docs/figuras/08_matrizes_confusao.png).
+- [Pipeline campeão e threshold](models/modelo_credito.joblib), acompanhado de [metadados, versões e SHA-256](models/metadata_credito.json).
+
+O `.joblib` contém o pipeline completo ajustado no treino, `threshold`, configuração, campos de entrada e cenário de custos. A recarga preservou exatamente as previsões. A API deve aplicar o corte salvo aos scores da classe 1; usar somente `pipeline.predict()` retornaria à decisão padrão do estimador.
 
 ## Escopo e requisitos
 
@@ -178,8 +218,8 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [x] Fazer a análise exploratória e documentar os achados.
 - [x] Implementar o tratamento dos dados e a nova variável.
 - [x] Construir os pipelines e comparar os modelos.
-- [ ] Avaliar overfitting, custos dos erros e pontos de corte.
-- [ ] Salvar o pipeline e o ponto de corte escolhidos.
+- [x] Avaliar overfitting, custos dos erros e pontos de corte.
+- [x] Salvar o pipeline e o ponto de corte escolhidos.
 - [ ] Implementar e verificar a API.
 - [ ] Completar a documentação e conferir a execução do projeto.
 - [x] Publicar o repositório público no GitHub.
@@ -226,9 +266,9 @@ Repositório público: [samuelbucco/sctec-risco-credito](https://github.com/samu
 
 A conexão remota `origin` aponta para `https://github.com/samuelbucco/sctec-risco-credito.git`. O envio inicial foi concluído e a branch local `main` acompanha `origin/main` no GitHub.
 
-## Resultados e decisões a documentar
+## Resultados e decisões documentados
 
-Estas informações serão preenchidas com evidências durante o desenvolvimento:
+Os notebooks, módulos e seções acima registram:
 
 - Dicionário de dados, incluindo `comprometimento_renda`.
 - Principais descobertas da análise exploratória.
@@ -311,7 +351,13 @@ Execute `notebooks/05_modelagem_validacao.ipynb` com o kernel da `.venv`, após 
 
 O teste é carregado após a gravação dos finalistas. As regras de seleção estão no código e o hash do arquivo de seleção é conferido após a avaliação de teste, garantindo que essa seleção não foi alterada durante a execução.
 
-A suíte agora contém **11 testes**: sete de pré-processamento e quatro de modelagem. Os novos testes verificam as oito configurações e seus pesos de classe, a seleção baseada apenas em validação, as métricas com limiar explícito e a integração das duas famílias com entradas brutas e valores ausentes.
+A modelagem possui quatro testes que verificam as oito configurações e seus pesos de classe, a seleção baseada apenas em validação, as métricas com limiar explícito e a integração das duas famílias com entradas brutas e valores ausentes.
+
+### Sexto notebook e testes de custos
+
+Execute `notebooks/06_avaliacao_financeira.ipynb` com o kernel da `.venv`, após gerar os conjuntos no notebook 02 e os finalistas no notebook 05. Ele faz seis ajustes para as previsões OOF, define os cortes e o candidato, registra a decisão e ajusta dois pipelines no treino completo para a avaliação final. O campeão é salvo em `models/modelo_credito.joblib`.
+
+A suíte contém **15 testes**: sete de pré-processamento, quatro de modelagem e quatro de custos. Os novos testes verificam contagens de FP/FN, cálculo de custo e recall, desempates, invariância ao multiplicar ambos os custos pela mesma constante e rejeição de entradas inválidas. A serialização do campeão também é verificada pela execução do notebook.
 
 ### Bibliotecas do projeto
 
@@ -326,7 +372,7 @@ A suíte agora contém **11 testes**: sete de pré-processamento e quatro de mod
 
 As versões das dependências diretas estão registradas em `requirements.txt`. A pasta `.venv` é local e está excluída do Git pelo `.gitignore`.
 
-As instruções de treinamento e inicialização da API serão adicionadas após a implementação e verificação desses passos.
+As instruções de treinamento e geração do artefato estão nos notebooks 05 e 06. As instruções de inicialização da API serão adicionadas após sua implementação e verificação.
 
 ## Entrega
 

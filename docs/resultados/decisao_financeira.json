@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "metodo": "Scores OOF com pipeline completo, StratifiedKFold 3 folds e seed 42.",
+  "cenario": {
+    "custo_fp": 1.0,
+    "custo_fn": 5.0,
+    "unidade": "UM ficticia",
+    "custos_reais": false
+  },
+  "grade": {
+    "inicio": 0,
+    "fim": 1,
+    "passo": 0.005,
+    "pontos": 201
+  },
+  "regra": "Classe 1 quando score >= threshold.",
+  "criterio_threshold": "Menor custo OOF; desempate por menos FN e menor threshold.",
+  "criterio_modelo": "Menor custo OOF; desempate por menos FN e logistica por simplicidade.",
+  "configuracao_campea": "rf_depth_None",
+  "threshold_campeao": 0.295,
+  "comparacao_oof": [
+    {
+      "configuracao": "rf_depth_None",
+      "threshold": 0.295,
+      "tn": 17663,
+      "fp": 2598,
+      "fn": 931,
+      "tp": 4740,
+      "custo_total": 7253.0,
+      "custo_medio": 0.2796930433441308,
+      "recall": 0.835831423029448,
+      "precision": 0.6459525756336877,
+      "f1": 0.7287262664309324
+    },
+    {
+      "configuracao": "rl_C_10",
+      "threshold": 0.49,
+      "tn": 16507,
+      "fp": 3754,
+      "fn": 1221,
+      "tp": 4450,
+      "custo_total": 9859.0,
+      "custo_medio": 0.3801866419867345,
+      "recall": 0.7846940574854523,
+      "precision": 0.5424183325207216,
+      "f1": 0.6414414414414414
+    }
+  ],
+  "sha256_treino": "97833566df3089bcac98bdb17cf7db6af7393704dba340729fd362275e3152d9",
+  "sha256_selecao_modelos": "20a1e41a4e76f7dc4294ef0e5d39ac40bd4db4d420437d5eca5643ab8a161c7d",
+  "calibracao_probabilistica_realizada": false
+}
