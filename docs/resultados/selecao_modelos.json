@@ -1,0 +1,101 @@
+{
+  "criterio": "Maior ROC-AUC media de validacao; desempate por F1 medio e menor complexidade.",
+  "n_splits": 3,
+  "random_state": 42,
+  "class_weight": "balanced",
+  "threshold_comparacao": 0.5,
+  "sha256_treino": "97833566df3089bcac98bdb17cf7db6af7393704dba340729fd362275e3152d9",
+  "sha256_teste": "f5ac96aa538de54b8d731f0d617e522f8406f47152e07ed9d5a03d82cbceb723",
+  "versao_sklearn": "1.9.1",
+  "configuracoes_avaliadas": [
+    {
+      "id": "rl_C_0.01",
+      "familia": "regressao_logistica",
+      "parametro": "C",
+      "valor": 0.01,
+      "rotulo": "C=0.01"
+    },
+    {
+      "id": "rl_C_0.1",
+      "familia": "regressao_logistica",
+      "parametro": "C",
+      "valor": 0.1,
+      "rotulo": "C=0.1"
+    },
+    {
+      "id": "rl_C_1",
+      "familia": "regressao_logistica",
+      "parametro": "C",
+      "valor": 1.0,
+      "rotulo": "C=1"
+    },
+    {
+      "id": "rl_C_10",
+      "familia": "regressao_logistica",
+      "parametro": "C",
+      "valor": 10.0,
+      "rotulo": "C=10"
+    },
+    {
+      "id": "rf_depth_3",
+      "familia": "random_forest",
+      "parametro": "max_depth",
+      "valor": 3,
+      "rotulo": "profundidade=3"
+    },
+    {
+      "id": "rf_depth_6",
+      "familia": "random_forest",
+      "parametro": "max_depth",
+      "valor": 6,
+      "rotulo": "profundidade=6"
+    },
+    {
+      "id": "rf_depth_10",
+      "familia": "random_forest",
+      "parametro": "max_depth",
+      "valor": 10,
+      "rotulo": "profundidade=10"
+    },
+    {
+      "id": "rf_depth_None",
+      "familia": "random_forest",
+      "parametro": "max_depth",
+      "valor": null,
+      "rotulo": "profundidade=sem limite"
+    }
+  ],
+  "finalistas": [
+    {
+      "configuracao": "rf_depth_None",
+      "familia": "random_forest",
+      "complexidade": "profundidade=sem limite",
+      "roc_auc_treino_cv": 1.0,
+      "roc_auc_validacao_cv": 0.9283737670110542,
+      "roc_auc_desvio_cv": 0.0008222026395740595,
+      "f1_treino_cv": 0.9988991923184974,
+      "f1_validacao_cv": 0.8067500432112062,
+      "f1_desvio_cv": 0.0021279491035718838,
+      "recall_treino_cv": 1.0,
+      "recall_validacao_cv": 0.7450198051290947,
+      "recall_desvio_cv": 0.007338126535337655,
+      "gap_roc_auc_cv": 0.07162623298894577
+    },
+    {
+      "configuracao": "rl_C_10",
+      "familia": "regressao_logistica",
+      "complexidade": "C=10",
+      "roc_auc_treino_cv": 0.8741946695376738,
+      "roc_auc_validacao_cv": 0.8729089056644109,
+      "roc_auc_desvio_cv": 0.005318923436102749,
+      "f1_treino_cv": 0.6460007442510248,
+      "f1_validacao_cv": 0.644694931998581,
+      "f1_desvio_cv": 0.003421058624950524,
+      "recall_treino_cv": 0.7818726044592217,
+      "recall_validacao_cv": 0.7778175092823427,
+      "recall_desvio_cv": 0.014015325238166936,
+      "gap_roc_auc_cv": 0.0012857638732628462
+    }
+  ],
+  "proxima_etapa": "Escolha financeira e threshold por validacao no treino; sem nova busca orientada pelo teste."
+}

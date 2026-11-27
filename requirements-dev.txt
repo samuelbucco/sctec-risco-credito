@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Cliente HTTP usado pelos testes da API
+httpx==0.29.0
