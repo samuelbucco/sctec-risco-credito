@@ -2,7 +2,7 @@
 
 Projeto avaliativo do curso **Integração de IA com Dados**, da etapa **Aperfeiçoar do programa SCTec**.
 
-**Status:** pipeline campeão salvo e API FastAPI implementada e verificada. As etapas técnicas estão concluídas; a revisão da entrega, a integração das branches e o vídeo são as próximas atividades.
+**Status:** implementação, modelo salvo, API e revisão técnica concluídos. O roteiro de apresentação e a conferência da entrega estão em `docs/`. Pendem a gravação do vídeo, a conferência de acesso e a submissão dos links no AVA.
 
 ## Início rápido da API
 
@@ -32,6 +32,26 @@ A solução tem finalidade educacional. Os custos financeiros adotados na compar
 - **Classe 0:** cliente que honra o empréstimo em dia.
 - **Classe 1:** cliente inadimplente.
 - **Roteiro:** [PDF do projeto](docs/SCTEC%20Aperfei%C3%A7oar.pdf).
+
+### Dicionário de dados
+
+Este dicionário de trabalho descreve as 12 colunas originais e a variável criada. As definições são baseadas no roteiro, nos nomes e nos valores observados. A moeda dos valores, o período da taxa e os critérios das notas não foram informados; a disponibilidade temporal dos atributos precisa de confirmação antes de uso fora do projeto educacional.
+
+| Coluna | Significado | Tipo lógico | Uso |
+| --- | --- | --- | --- |
+| `person_age` | Idade em anos | Numérico inteiro | Entrada |
+| `person_income` | Renda anual, moeda não informada | Numérico | Entrada e componente da nova variável |
+| `person_home_ownership` | Situação de moradia: aluguel, imóvel próprio, financiamento ou outra | Categórico | Entrada |
+| `person_emp_length` | Tempo de emprego, interpretado em anos | Numérico | Entrada; aceita ausência na API |
+| `loan_intent` | Finalidade do empréstimo | Categórico | Entrada |
+| `loan_grade` | Nota atribuída ao empréstimo | Categórico | Entrada, sem impor escala ordinal |
+| `loan_amnt` | Valor total do empréstimo, na mesma moeda da renda | Numérico | Entrada e componente da nova variável |
+| `loan_int_rate` | Taxa de juros registrada, com período e unidade a confirmar | Numérico | Entrada; aceita ausência na API |
+| `loan_status` | `0` para adimplente e `1` para inadimplente | Categoria binária | Alvo; excluído das entradas |
+| `loan_percent_income` | Indicador original da relação entre empréstimo e renda | Numérico | Desconsiderado no pipeline, conforme diagnóstico de divergência |
+| `cb_person_default_on_file` | Histórico de inadimplência: `Y` ou `N` | Categórico | Entrada; diferente do alvo atual |
+| `cb_person_cred_hist_length` | Tempo de histórico de crédito, interpretado em anos | Numérico | Entrada; aceita ausência na API |
+| `comprometimento_renda` | `(loan_amnt / person_income) × 100`, em porcentagem | Numérico contínuo | Criado no pipeline após imputar os componentes |
 
 ### Obtenção e conferência do arquivo original
 
@@ -264,7 +284,7 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [x] Avaliar overfitting, custos dos erros e pontos de corte.
 - [x] Salvar o pipeline e o ponto de corte escolhidos.
 - [x] Implementar e verificar a API.
-- [ ] Completar a documentação e conferir a execução do projeto.
+- [x] Completar a documentação e conferir a execução do projeto.
 - [x] Publicar o repositório público no GitHub.
 - [ ] Gravar o vídeo de até sete minutos e conferir o acesso ao link.
 - [ ] Entregar os links do repositório e do vídeo no AVA.
@@ -469,3 +489,10 @@ As instruções de treinamento e geração do artefato estão nos notebooks 05 e
 - Submissão dos dois links na atividade Projeto Avaliativo Final do AVA.
 
 O vídeo deve abordar o problema de negócio, a análise e limpeza dos dados, a modelagem e o overfitting, a matriz de confusão e a escolha final, além de demonstrar uma requisição real à API pelo Swagger UI (`/docs`) com o servidor Uvicorn em execução.
+
+- [Roteiro de apresentação com duração planejada de 6 minutos e 35 segundos](docs/roteiro_video.md).
+- [Conferência dos critérios e passos para a entrega](docs/conferencia_entrega.md).
+
+**Repositório para entregar:** [samuelbucco/sctec-risco-credito](https://github.com/samuelbucco/sctec-risco-credito).
+
+**Vídeo:** pendente de gravação e publicação. Após publicar como não listado no YouTube ou com acesso de leitura no Google Drive, confira o link em uma janela sem login, registre o endereço aqui e submeta os dois links no AVA.
