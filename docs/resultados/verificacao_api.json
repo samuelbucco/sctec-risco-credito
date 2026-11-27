@@ -1,0 +1,72 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "verificacao": "Requisicoes HTTP reais ao Uvicorn local.",
+  "casos": [
+    {
+      "metodo": "GET",
+      "rota": "/health",
+      "status": 200,
+      "resposta": {
+        "status": "ok",
+        "modelo": "rf_depth_None",
+        "threshold": 0.295
+      }
+    },
+    {
+      "metodo": "GET",
+      "rota": "/docs",
+      "status": 200
+    },
+    {
+      "metodo": "GET",
+      "rota": "/openapi.json",
+      "status": 200
+    },
+    {
+      "metodo": "POST",
+      "rota": "/predict",
+      "exemplo": "credito_baixo_risco.json",
+      "status": 200,
+      "resposta": {
+        "probabilidade_inadimplencia": 0.03,
+        "classe_prevista": 0,
+        "classificacao_risco": "baixo",
+        "acao_recomendada": "Prosseguir com a análise de crédito.",
+        "threshold": 0.295,
+        "modelo": "rf_depth_None"
+      }
+    },
+    {
+      "metodo": "POST",
+      "rota": "/predict",
+      "exemplo": "credito_alto_risco.json",
+      "status": 200,
+      "resposta": {
+        "probabilidade_inadimplencia": 0.97,
+        "classe_prevista": 1,
+        "classificacao_risco": "elevado",
+        "acao_recomendada": "Encaminhar para revisão de crédito.",
+        "threshold": 0.295,
+        "modelo": "rf_depth_None"
+      }
+    },
+    {
+      "metodo": "POST",
+      "rota": "/predict",
+      "caso": "renda_zero",
+      "status": 422,
+      "resposta": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "person_income"
+            ],
+            "msg": "Input should be greater than 0",
+            "type": "greater_than"
+          }
+        ]
+      }
+    }
+  ]
+}

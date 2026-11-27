@@ -2,7 +2,20 @@
 
 Projeto avaliativo do curso **Integração de IA com Dados**, da etapa **Aperfeiçoar do programa SCTec**.
 
-**Status:** modelo e ponto de corte escolhidos por custo simulado com validação no treino; avaliação no teste concluída e pipeline campeão salvo. A API e a preparação da entrega são as próximas etapas.
+**Status:** pipeline campeão salvo e API FastAPI implementada e verificada. As etapas técnicas estão concluídas; a revisão da entrega, a integração das branches e o vídeo são as próximas atividades.
+
+## Início rápido da API
+
+Com Python 3.13 instalado, execute os comandos na raiz deste repositório (macOS ou Linux):
+
+```bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload
+```
+
+Abra o [Swagger UI](http://127.0.0.1:8000/docs) para testar `GET /health` e `POST /predict`. O pipeline já está incluído em `models/`; executar a API não exige baixar os CSVs ou refazer o treinamento. Para reproduzir o desenvolvimento, siga os notebooks em ordem.
 
 ## Contexto e objetivo
 
@@ -188,6 +201,36 @@ Arquivos gerados:
 
 O `.joblib` contém o pipeline completo ajustado no treino, `threshold`, configuração, campos de entrada e cenário de custos. A recarga preservou exatamente as previsões. A API deve aplicar o corte salvo aos scores da classe 1; usar somente `pipeline.predict()` retornaria à decisão padrão do estimador.
 
+### API REST com FastAPI
+
+O [servidor](app/main.py) carrega o artefato uma vez na inicialização, com [validação do SHA-256 e inferência](app/prediction.py). Os [contratos Pydantic](app/schemas.py) definem as entradas e saídas. Cada requisição utiliza `predict_proba` e aplica o corte salvo, sem chamar `fit`.
+
+| Endpoint | Função | Resposta |
+| --- | --- | --- |
+| `GET /health` | Conferir que o modelo está carregado | Status, configuração e corte |
+| `POST /predict` | Prever o risco de um registro | Score estimado, classe, risco, ação recomendada, corte e configuração |
+| `GET /docs` | Abrir o Swagger UI | Documentação interativa |
+| `GET /openapi.json` | Consultar o contrato da API | Especificação OpenAPI |
+
+Regras do contrato:
+
+- `person_age`, `person_income` e `loan_amnt` são obrigatórios. Idade deve ser inteira entre 18 e 100; renda e valor emprestado devem ser numéricos, finitos e positivos.
+- Os outros sete campos podem ser omitidos ou enviados como `null`; a imputação usa os parâmetros já aprendidos no treino. Taxa informada deve ser positiva; tempos informados não podem ser negativos ou maiores que a idade.
+- Categorias são normalizadas para maiúsculas e têm espaços externos removidos. Categorias novas de moradia, finalidade e nota são aceitas pelo encoder. O histórico de inadimplência aceita `Y`, `N` ou ausência.
+- Campos extras são rejeitados, incluindo `loan_status`, `loan_percent_income` e a variável calculada. A API calcula a nova variável pelo pipeline.
+- Entradas inválidas retornam HTTP 422. Modelo indisponível retorna HTTP 503; arquivo ausente ou SHA-256 incompatível impede a inicialização.
+
+Os exemplos são sintéticos e representam os dois lados do corte no artefato atual:
+
+| Exemplo | Score estimado | Classe | Risco |
+| --- | ---: | ---: | --- |
+| [Baixo risco](docs/exemplos/credito_baixo_risco.json) | 0,03 | 0 | baixo |
+| [Alto risco](docs/exemplos/credito_alto_risco.json) | 0,97 | 1 | elevado |
+
+As ações são `Prosseguir com a análise de crédito.` para classe 0 e `Encaminhar para revisão de crédito.` para classe 1. O campo `probabilidade_inadimplencia` contém o score estimado do modelo, sem calibração probabilística.
+
+Uma [verificação com requisições HTTP reais](docs/resultados/verificacao_api.json) registra `/health`, Swagger, OpenAPI, os dois exemplos e a rejeição de renda zero. O serviço foi executado localmente com Uvicorn; o repositório não configura hospedagem externa.
+
 ## Escopo e requisitos
 
 1. **Análise exploratória:** apresentar dimensões, tipos, estatísticas descritivas, pelo menos três gráficos explicativos e interpretação dos resultados.
@@ -220,7 +263,7 @@ A seleção de hiperparâmetros e do ponto de corte será orientada por validaç
 - [x] Construir os pipelines e comparar os modelos.
 - [x] Avaliar overfitting, custos dos erros e pontos de corte.
 - [x] Salvar o pipeline e o ponto de corte escolhidos.
-- [ ] Implementar e verificar a API.
+- [x] Implementar e verificar a API.
 - [ ] Completar a documentação e conferir a execução do projeto.
 - [x] Publicar o repositório público no GitHub.
 - [ ] Gravar o vídeo de até sete minutos e conferir o acesso ao link.
@@ -243,6 +286,7 @@ Projeto/
 ├── app/               # API FastAPI e contratos Pydantic
 ├── README.md          # Apresentação e guia do projeto
 ├── requirements.txt   # Dependências Python com versões registradas
+├── requirements-dev.txt # Dependências adicionais dos testes da API
 └── .gitignore         # Arquivos excluídos do versionamento
 ```
 
@@ -252,7 +296,7 @@ O `.gitignore` exclui do versionamento o ambiente virtual, caches do Python, che
 
 ## Controle de versão
 
-O projeto utiliza Git para registrar sua evolução. A branch `main` guarda a versão consolidada; `feat/eda-limpeza` reúne análise e preparação dos dados, e `feat/pipeline-modelagem` dá continuidade com a comparação dos modelos.
+O projeto utiliza Git para registrar sua evolução. A branch `main` guarda a versão consolidada; `feat/eda-limpeza` reúne análise e preparação dos dados, `feat/pipeline-modelagem` contém modelagem e avaliação financeira, e `feat/api-fastapi` acrescenta o serviço de inferência.
 
 Os commits devem descrever mudanças concretas, por exemplo:
 
@@ -293,7 +337,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-Neste computador, o ambiente `.venv` e as bibliotecas já foram preparados. Ao abrir um novo terminal, basta ativá-lo:
+Após preparar o ambiente e instalar as bibliotecas, ative-o novamente ao abrir um novo terminal:
 
 ```bash
 source .venv/bin/activate
@@ -340,6 +384,7 @@ Execute `notebooks/04_tratamento_features.ipynb` com o kernel da `.venv`. Ele im
 Para verificar as regras de negócio e o isolamento do ajuste, execute na raiz do projeto:
 
 ```bash
+python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
 
@@ -357,7 +402,48 @@ A modelagem possui quatro testes que verificam as oito configurações e seus pe
 
 Execute `notebooks/06_avaliacao_financeira.ipynb` com o kernel da `.venv`, após gerar os conjuntos no notebook 02 e os finalistas no notebook 05. Ele faz seis ajustes para as previsões OOF, define os cortes e o candidato, registra a decisão e ajusta dois pipelines no treino completo para a avaliação final. O campeão é salvo em `models/modelo_credito.joblib`.
 
-A suíte contém **15 testes**: sete de pré-processamento, quatro de modelagem e quatro de custos. Os novos testes verificam contagens de FP/FN, cálculo de custo e recall, desempates, invariância ao multiplicar ambos os custos pela mesma constante e rejeição de entradas inválidas. A serialização do campeão também é verificada pela execução do notebook.
+Pré-processamento, modelagem e custos somam **15 testes**. Os quatro testes de custos verificam contagens de FP/FN, cálculo de custo e recall, desempates, invariância ao multiplicar ambos os custos pela mesma constante e rejeição de entradas inválidas. A serialização do campeão também é verificada pela execução do notebook.
+
+### Executar e demonstrar a API
+
+Com o ambiente ativado e as dependências instaladas, mantenha este comando rodando no terminal:
+
+```bash
+python -m uvicorn app.main:app --reload
+```
+
+No Swagger em `http://127.0.0.1:8000/docs`:
+
+1. Abra `GET /health`, clique em **Try it out** e em **Execute**. A resposta deve indicar `status: ok`, modelo `rf_depth_None` e corte `0.295`.
+2. Abra `POST /predict`, clique em **Try it out** e mantenha o exemplo de entrada ou cole o conteúdo de um dos arquivos em `docs/exemplos/`.
+3. Clique em **Execute** e confira o score, a classificação e a ação recomendada.
+4. Troque `person_income` para `0` e execute novamente para observar a validação HTTP 422.
+
+Para testar por outro terminal, a partir da raiz do projeto:
+
+```bash
+curl http://127.0.0.1:8000/health
+curl -X POST http://127.0.0.1:8000/predict \
+  -H 'Content-Type: application/json' \
+  --data-binary @docs/exemplos/credito_baixo_risco.json
+```
+
+Resposta do exemplo de baixo risco no artefato atual:
+
+```json
+{
+  "probabilidade_inadimplencia": 0.03,
+  "classe_prevista": 0,
+  "classificacao_risco": "baixo",
+  "acao_recomendada": "Prosseguir com a análise de crédito.",
+  "threshold": 0.295,
+  "modelo": "rf_depth_None"
+}
+```
+
+Para parar um servidor iniciado no terminal, pressione `Ctrl+C`. Se a porta 8000 estiver ocupada, use `--port 8001` e ajuste os endereços de teste.
+
+A suíte completa contém **26 testes**. Os 11 testes da API verificam carregamento e reutilização do modelo, corte salvo e sua fronteira inclusiva, respostas dos exemplos, validação de entradas e valores não finitos, imputação dos opcionais, categorias novas, indisponibilidade, OpenAPI/Swagger e falhas de inicialização. Instale `requirements-dev.txt` e use o comando de testes mostrado acima.
 
 ### Bibliotecas do projeto
 
@@ -372,7 +458,7 @@ A suíte contém **15 testes**: sete de pré-processamento, quatro de modelagem 
 
 As versões das dependências diretas estão registradas em `requirements.txt`. A pasta `.venv` é local e está excluída do Git pelo `.gitignore`.
 
-As instruções de treinamento e geração do artefato estão nos notebooks 05 e 06. As instruções de inicialização da API serão adicionadas após sua implementação e verificação.
+As instruções de treinamento e geração do artefato estão nos notebooks 05 e 06. A API utiliza o artefato pronto conforme os passos acima.
 
 ## Entrega
 
